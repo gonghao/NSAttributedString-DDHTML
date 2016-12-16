@@ -352,6 +352,13 @@
                 }
             #endif
         }
+
+        else if (strncmp("center", (const char *)xmlNode->name, strlen((const char *)xmlNode->name)) == 0) {
+            NSMutableParagraphStyle *paragraphStyle = [[NSParagraphStyle defaultParagraphStyle] mutableCopy];
+          
+            paragraphStyle.alignment = NSTextAlignmentCenter;
+            [nodeAttributedString addAttribute:NSParagraphStyleAttributeName value:paragraphStyle range:nodeAttributedStringRange];
+        }
     }
     
     return nodeAttributedString;
