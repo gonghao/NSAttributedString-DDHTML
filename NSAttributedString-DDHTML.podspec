@@ -1,6 +1,6 @@
 Pod::Spec.new do |s|
   s.name      = 'NSAttributedString-DDHTML'
-  s.version   = '1.2.0'
+  s.version   = '1.2.1'
   s.license   = {
     :type => 'BSD',
     :text => <<-LICENSE
@@ -37,7 +37,7 @@ Pod::Spec.new do |s|
   s.tvos.deployment_target = '9.0'
   s.watchos.deployment_target = '2.0'
 
-  s.source_files = 'NSAttributedString+DDHTML'
+  s.source_files = 'NSAttributedString+DDHTML/*.{h,m}'
   s.libraries = 'xml2'
   s.xcconfig = { 'HEADER_SEARCH_PATHS' => '$(SDKROOT)/usr/include/libxml2' }
 end
