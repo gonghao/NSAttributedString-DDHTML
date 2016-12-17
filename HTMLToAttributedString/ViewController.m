@@ -9,9 +9,11 @@
 #import "ViewController.h"
 #import "NSAttributedString+DDHTML.h"
 
-@interface ViewController ()
+@interface ViewController () <DDHTMLImageLoader>
 
 @property (weak, nonatomic) IBOutlet UILabel *label;
+
+@property (strong, nonatomic) NSMapTable<NSString *, NSTextAttachment *> *textAttachmentDict;
 
 @end
 
@@ -27,6 +29,7 @@
                                                                        normalFont:[UIFont systemFontOfSize:12]
                                                                          boldFont:[UIFont boldSystemFontOfSize:12]
                                                                        italicFont:[UIFont italicSystemFontOfSize:12.0]
+                                                                      imageLoader:self
                                       ];
     self.label.attributedText = attrString;
 }
@@ -35,6 +38,55 @@
 {
     [super didReceiveMemoryWarning];
     // Dispose of any resources that can be recreated.
+}
+
+- (UIImage *)ddhtml_imageForSource:(NSString *)imageSource withSize:(CGSize)imageSize
+{
+  UIGraphicsBeginImageContext(imageSize);
+  CGContextRef context = UIGraphicsGetCurrentContext();
+  [[UIColor darkGrayColor] setFill];
+  CGContextFillRect(context, (CGRect){CGPointZero, imageSize});
+  UIImage *image = UIGraphicsGetImageFromCurrentImageContext();
+  UIGraphicsEndImageContext();
+  dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(5 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+    NSTextAttachment *textAttachment = [self.textAttachmentDict objectForKey:[self keyForImageSource:imageSource size:imageSize]];
+//    textAttachment.image = [UIImage imageNamed:imageSource];
+
+    NSMutableAttributedString *text = [self.label.attributedText mutableCopy];
+    [text enumerateAttribute:NSAttachmentAttributeName
+                     inRange:NSMakeRange(0, [text length])
+                     options:nil
+                  usingBlock:^(id  _Nullable value, NSRange range, BOOL * _Nonnull stop) {
+                    if (value == textAttachment) {
+                      NSTextAttachment *attach = [[NSTextAttachment alloc] init];
+                      attach.image = [UIImage imageNamed:imageSource];
+                      attach.bounds = textAttachment.bounds;
+//                      textAttachment.image = [UIImage imageNamed:imageSource];
+                      [text replaceCharactersInRange:range
+                                withAttributedString:[NSAttributedString attributedStringWithAttachment:attach]];
+                    }
+                  }];
+
+    self.label.attributedText = text;
+  });
+  return image;
+}
+
+- (void)ddhtml_didImageInsertInTextAttachment:(NSTextAttachment *)textAttachment
+                               forImageSource:(NSString *)imageSource
+                                     withSize:(CGSize)imageSize
+{
+  if (!_textAttachmentDict) {
+    _textAttachmentDict = [NSMapTable mapTableWithKeyOptions:NSMapTableStrongMemory
+                                                valueOptions:NSMapTableWeakMemory];
+  }
+
+  [self.textAttachmentDict setObject:textAttachment forKey:[self keyForImageSource:imageSource size:imageSize]];
+}
+
+- (NSString *)keyForImageSource:(NSString *)imageSource size:(CGSize)imageSize
+{
+  return [[NSString alloc] initWithFormat:@"%@#[%.0fx%.0f]", imageSource, imageSize.width, imageSize.height];
 }
 
 @end

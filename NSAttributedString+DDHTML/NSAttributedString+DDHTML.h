@@ -33,6 +33,15 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
+@protocol DDHTMLImageLoader <NSObject>
+
+- (nullable UIImage *)ddhtml_imageForSource:(NSString *)imageSource withSize:(CGSize)imageSize;
+- (void)ddhtml_didImageInsertInTextAttachment:(NSTextAttachment *)textAttachment
+                               forImageSource:(NSString *)imageSource
+                                     withSize:(CGSize)imageSize;
+
+@end
+
 @interface NSAttributedString (DDHTML)
 
 /**
@@ -74,11 +83,11 @@ NS_ASSUME_NONNULL_BEGIN
  *  @param normalFont   Font to use for general text
  *  @param boldFont     Font to use for <b> and <strong> tags
  *  @param italicFont   Font to use for <i> and <em> tags
- *  @param imageMap     Images to use in place of standard bundle images.
+ *  @param imageLoader  Loader to use load image with URL.
  *
  *  @return Attributed string
  */
-+ (NSAttributedString *)attributedStringFromHTML:(NSString *)htmlString normalFont:(UIFont *)normalFont boldFont:(UIFont *)boldFont italicFont:(UIFont *)italicFont imageMap:(NSDictionary<NSString *, UIImage *> *)imageMap;
++ (NSAttributedString *)attributedStringFromHTML:(NSString *)htmlString normalFont:(UIFont *)normalFont boldFont:(UIFont *)boldFont italicFont:(UIFont *)italicFont imageLoader:(nullable id<DDHTMLImageLoader>)imageLoader;
 
 @end
 

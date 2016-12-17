@@ -56,10 +56,10 @@
                                normalFont:normalFont
                                  boldFont:boldFont
                                italicFont:italicFont
-                                 imageMap:@{}];
+                              imageLoader:nil];
 }
 
-+ (NSAttributedString *)attributedStringFromHTML:(NSString *)htmlString normalFont:(UIFont *)normalFont boldFont:(UIFont *)boldFont italicFont:(UIFont *)italicFont imageMap:(NSDictionary<NSString *, UIImage *> *)imageMap
++ (NSAttributedString *)attributedStringFromHTML:(NSString *)htmlString normalFont:(UIFont *)normalFont boldFont:(UIFont *)boldFont italicFont:(UIFont *)italicFont imageLoader:(nullable id<DDHTMLImageLoader>)imageLoader
 {
     // Parse HTML string as XML document using UTF-8 encoding
     NSData *documentData = [htmlString dataUsingEncoding:NSUTF8StringEncoding];
@@ -73,7 +73,7 @@
     
     xmlNodePtr currentNode = document->children;
     while (currentNode != NULL) {
-        NSAttributedString *childString = [self attributedStringFromNode:currentNode normalFont:normalFont boldFont:boldFont italicFont:italicFont imageMap:imageMap];
+        NSAttributedString *childString = [self attributedStringFromNode:currentNode normalFont:normalFont boldFont:boldFont italicFont:italicFont imageLoader:imageLoader];
         [finalAttributedString appendAttributedString:childString];
         
         currentNode = currentNode->next;
@@ -84,7 +84,7 @@
     return finalAttributedString;
 }
 
-+ (NSAttributedString *)attributedStringFromNode:(xmlNodePtr)xmlNode normalFont:(UIFont *)normalFont boldFont:(UIFont *)boldFont italicFont:(UIFont *)italicFont imageMap:(NSDictionary<NSString *, UIImage *> *)imageMap
++ (NSAttributedString *)attributedStringFromNode:(xmlNodePtr)xmlNode normalFont:(UIFont *)normalFont boldFont:(UIFont *)boldFont italicFont:(UIFont *)italicFont imageLoader:(nullable id<DDHTMLImageLoader>)imageLoader
 {
     NSMutableAttributedString *nodeAttributedString = [[NSMutableAttributedString alloc] init];
     
@@ -96,7 +96,7 @@
     // Handle children
     xmlNodePtr currentNode = xmlNode->children;
     while (currentNode != NULL) {
-        NSAttributedString *childString = [self attributedStringFromNode:currentNode normalFont:normalFont boldFont:boldFont italicFont:italicFont imageMap:imageMap];
+        NSAttributedString *childString = [self attributedStringFromNode:currentNode normalFont:normalFont boldFont:boldFont italicFont:italicFont imageLoader:imageLoader];
         [nodeAttributedString appendAttributedString:childString];
         
         currentNode = currentNode->next;
@@ -333,21 +333,23 @@
                 NSString *src = attributeDictionary[@"src"];
                 NSString *width = attributeDictionary[@"width"];
                 NSString *height = attributeDictionary[@"height"];
-        
+
                 if (src != nil) {
-                    UIImage *image = imageMap[src];
-                    if (image == nil) {
-                        image = [UIImage imageNamed:src];
-                    }
-                    
+                    CGSize size = CGSizeMake([width integerValue], [height integerValue]);
+                    UIImage *image = [imageLoader ddhtml_imageForSource:src withSize:size];
+
                     if (image != nil) {
                         NSTextAttachment *imageAttachment = [[NSTextAttachment alloc] init];
                         imageAttachment.image = image;
                         if (width != nil && height != nil) {
-                            imageAttachment.bounds = CGRectMake(0, 0, [width integerValue] / 2, [height integerValue] / 2);
+                            imageAttachment.bounds = (CGRect){CGPointZero, size};
                         }
                         NSAttributedString *imageAttributeString = [NSAttributedString attributedStringWithAttachment:imageAttachment];
                         [nodeAttributedString appendAttributedString:imageAttributeString];
+
+                        [imageLoader ddhtml_didImageInsertInTextAttachment:imageAttachment
+                                                            forImageSource:src
+                                                                  withSize:size];
                     }
                 }
             #endif
